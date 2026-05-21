@@ -62,21 +62,11 @@
         var highlightLayer;
         function highlightFeature(e) {
             highlightLayer = e.target;
-
-            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
-              highlightLayer.setStyle({
-                color: 'rgba(255, 255, 0, 1.00)',
-              });
-            } else {
-              highlightLayer.setStyle({
-                fillColor: 'rgba(255, 255, 0, 1.00)',
-                fillOpacity: 1
-              });
-            }
+            highlightLayer.openPopup();
         }
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
-        }).fitBounds([[-23.49582097950265,-44.89522252766067],[-20.657313587405874,-40.29972048051885]]);
+        }).fitBounds([[-23.53896375716648,-45.168993180548675],[-20.683710615903838,-39.705127297433904]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -174,10 +164,12 @@
         function pop_Contagem_Endereos_Sucetibilidade_RJ_1(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -259,10 +251,12 @@
         function pop_SuscetibilidadeaInundaoSerrana_2(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -319,10 +313,12 @@
         function pop_SuscetibilidadeaInundaoNorteFluminense_3(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -379,10 +375,12 @@
         function pop_SuscetibilidadeaInundaoNoroesteFluminense_4(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -439,10 +437,12 @@
         function pop_SuscetibilidadeaInundaoMetropolitana_5(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -499,10 +499,12 @@
         function pop_SuscetibilidadeaInundaoMdioParaba_6(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -559,10 +561,12 @@
         function pop_SuscetibilidadeaInundaoCostaVerde_7(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -619,10 +623,12 @@
         function pop_SuscetibilidadeaInundaoCentroSul_8(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -679,10 +685,12 @@
         function pop_SuscetibilidadeaInundaoBaixadasLitorneas_9(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -739,10 +747,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaSerrana_10(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -799,10 +809,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaNorteFluminense_11(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -859,10 +871,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -919,10 +933,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaMetropolitana_13(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -979,10 +995,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaMdioParaba_14(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -1039,10 +1057,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaCostaVerde_15(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -1099,10 +1119,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaCentroSul_16(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -1159,10 +1181,12 @@
         function pop_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
                     }
                 },
                 mouseover: highlightFeature,
@@ -1217,7 +1241,7 @@
         });
         bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17);
         var overlaysTree = [
-        {label: '<b>Movimento de Massa</b>',  selectAllCheckbox: true, children: [
+        {label: '<b>Movimento de Massa</b>', collapsed: true, selectAllCheckbox: true, children: [
             {label: 'Suscetibilidade a Movimento de Massa Baixadas Litorâneas<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17},
             {label: 'Suscetibilidade a Movimento de Massa Centro-Sul<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCentroSul_16_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCentroSul_16_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaCentroSul_16},
             {label: 'Suscetibilidade a Movimento de Massa Costa Verde<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCostaVerde_15_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCostaVerde_15_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaCostaVerde_15},
@@ -1226,7 +1250,7 @@
             {label: 'Suscetibilidade a Movimento de Massa Noroeste Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12},
             {label: 'Suscetibilidade a Movimento de Massa Norte Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNorteFluminense_11_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNorteFluminense_11_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaNorteFluminense_11},
             {label: 'Suscetibilidade a Movimento de Massa Serrana<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaSerrana_10_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaSerrana_10_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaSerrana_10},]},
-        {label: '<b>Inundação</b>',  selectAllCheckbox: true, children: [
+        {label: '<b>Inundação</b>', collapsed: true, selectAllCheckbox: true, children: [
             {label: 'Suscetibilidade a Inundação Baixadas Litorâneas<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaInundaoBaixadasLitorneas_9_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaInundaoBaixadasLitorneas_9_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaInundaoBaixadasLitorneas_9},
             {label: 'Suscetibilidade a Inundação Centro-Sul<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaInundaoCentroSul_8_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaInundaoCentroSul_8_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaInundaoCentroSul_8},
             {label: 'Suscetibilidade a Inundação Costa Verde<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaInundaoCostaVerde_7_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaInundaoCostaVerde_7_Media1.png" /></td><td>Media</td></tr></table>', layer: layer_SuscetibilidadeaInundaoCostaVerde_7},

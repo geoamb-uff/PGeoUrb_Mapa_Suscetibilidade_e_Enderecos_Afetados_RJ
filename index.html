@@ -1,0 +1,1328 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Suscetibilidade a movimentos gravitacionais de massa e inundações no Estado do Rio de Janeiro</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="data/Contagem_Endereos_Sucetibilidade_RJ_1.js"></script>
+        <script src="data/SuscetibilidadeInundaoSerrana_2.js"></script>
+        <script src="data/SuscetibilidadeInundaoNorteFluminense_3.js"></script>
+        <script src="data/SuscetibilidadeInundaoNoroesteFluminense_4.js"></script>
+        <script src="data/SuscetibilidadeInundaoMetropolitana_5.js"></script>
+        <script src="data/SuscetibilidadeInundaoMdioParaba_6.js"></script>
+        <script src="data/SuscetibilidadeInundaoCostaVerde_7.js"></script>
+        <script src="data/SuscetibilidadeInundaoCentroSul_8.js"></script>
+        <script src="data/SuscetibilidadeInundaoBaixadasLitorneas_9.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaSerrana_10.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaNorteFluminense_11.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaMetropolitana_13.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaMdioParaba_14.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaCostaVerde_15.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaCentroSul_16.js"></script>
+        <script src="data/SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: 'rgba(255, 255, 255, 0.60)',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: 'rgba(255, 255, 255, 0.60)',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-23.99808264343437,-45.57898555924166],[-21.181697914309435,-40.405846131676846]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var title = new L.Control({'position':'topright'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Suscetibilidade a movimentos gravitacionais de massa e inundações no Estado do Rio de Janeiro</h2>';
+        };
+        title.addTo(map);
+        var abstract = new L.Control({'position':'topright'});
+        abstract.onAdd = function (map) {
+            this._div = L.DomUtil.create('div',
+            'leaflet-control abstract');
+            this._div.id = 'abstract'
+                this._div.setAttribute("onmouseenter", "abstract.show()");
+                this._div.setAttribute("onmouseleave", "abstract.hide()");
+                this.hide();
+                return this._div;
+            };
+            abstract.hide = function () {
+                this._div.classList.remove("abstractUncollapsed");
+                this._div.classList.add("abstract");
+                this._div.innerHTML = 'i'
+            }
+            abstract.show = function () {
+                this._div.classList.remove("abstract");
+                this._div.classList.add("abstractUncollapsed");
+                this._div.innerHTML = 'NM_MUN: Nome do Município<br />AREA_KM2: Área total do município em quilometros quadrados<br />RG_ADM: Região Administrativa do Município<br />A_M_A: Área de suscetibilidade alta a movimento de massa em km²<br />PC_A_M_A: Percentual da área municipal com suscetibilidade alta a movimento gravitacional de massa<br />A_M_M: Área de suscetibilidade média a movimento gravitacional de massa em km²<br />PC_A_M_M: Percentual da área municipal com suscetibilidade média a movimento gravitacional de massa<br />A_I_A: Área de suscetibilidade alta a inundação em km²<br />PC_A_I_A: Percentual da área municipal com suscetibilidade alta a inundação<br />A_I_M: Área de suscetibilidade média a inundação em km²<br />PC_A_I_M: Percentual da área municipal com suscetibilidade média a inundação<br />PT_M_A: Quantidade de pontos(endereços) presentes em áreas com alta suscetibilidade a movimento gravitacional de massa<br />PT_M_M: Quantidade de pontos(endereços) presentes em áreas com média suscetibilidade a movimento gravitacional de massa<br />PT_I_A: Quantidade de pontos(endereços) presentes em áreas com alta suscetibilidade a inundação<br />PT_I_M: Quantidade de pontos(endereços) presentes em áreas com média suscetibilidade a inundação';
+        };
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleRoad_0');
+        map.getPane('pane_GoogleRoad_0').style.zIndex = 400;
+        var layer_GoogleRoad_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleRoad_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleRoad_0;
+        map.addLayer(layer_GoogleRoad_0);
+        function pop_Contagem_Endereos_Sucetibilidade_RJ_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">NM_MUN</th>\
+                        <td class="visible-with-data" id="NM_MUN">' + (feature.properties['NM_MUN'] !== null ? autolinker.link(String(feature.properties['NM_MUN']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">AREA_KM2</th>\
+                        <td>' + (feature.properties['AREA_KM2'] !== null ? autolinker.link(String(feature.properties['AREA_KM2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">RG_ADM</th>\
+                        <td>' + (feature.properties['RG_ADM'] !== null ? autolinker.link(String(feature.properties['RG_ADM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">A_M_A</th>\
+                        <td>' + (feature.properties['A_M_A'] !== null ? autolinker.link(String(feature.properties['A_M_A']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PC_A_M_A</th>\
+                        <td>' + (feature.properties['PC_A_M_A'] !== null ? autolinker.link(String(feature.properties['PC_A_M_A']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">A_M_M</th>\
+                        <td>' + (feature.properties['A_M_M'] !== null ? autolinker.link(String(feature.properties['A_M_M']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PC_A_M_M</th>\
+                        <td>' + (feature.properties['PC_A_M_M'] !== null ? autolinker.link(String(feature.properties['PC_A_M_M']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">A_I_A</th>\
+                        <td>' + (feature.properties['A_I_A'] !== null ? autolinker.link(String(feature.properties['A_I_A']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PC_A_I_A</th>\
+                        <td>' + (feature.properties['PC_A_I_A'] !== null ? autolinker.link(String(feature.properties['PC_A_I_A']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">A_I_M</th>\
+                        <td>' + (feature.properties['A_I_M'] !== null ? autolinker.link(String(feature.properties['A_I_M']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PC_A_I_M</th>\
+                        <td>' + (feature.properties['PC_A_I_M'] !== null ? autolinker.link(String(feature.properties['PC_A_I_M']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PT_M_A</th>\
+                        <td>' + (feature.properties['PT_M_A'] !== null ? autolinker.link(String(feature.properties['PT_M_A']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PT_M_M</th>\
+                        <td>' + (feature.properties['PT_M_M'] !== null ? autolinker.link(String(feature.properties['PT_M_M']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PT_I_A</th>\
+                        <td>' + (feature.properties['PT_I_A'] !== null ? autolinker.link(String(feature.properties['PT_I_A']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PT_I_M</th>\
+                        <td>' + (feature.properties['PT_I_M'] !== null ? autolinker.link(String(feature.properties['PT_I_M']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Contagem_Endereos_Sucetibilidade_RJ_1_0() {
+            return {
+                pane: 'pane_Contagem_Endereos_Sucetibilidade_RJ_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(214,214,214,0.5019607843137255)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Contagem_Endereos_Sucetibilidade_RJ_1');
+        map.getPane('pane_Contagem_Endereos_Sucetibilidade_RJ_1').style.zIndex = 401;
+        map.getPane('pane_Contagem_Endereos_Sucetibilidade_RJ_1').style['mix-blend-mode'] = 'normal';
+        var layer_Contagem_Endereos_Sucetibilidade_RJ_1 = new L.geoJson(json_Contagem_Endereos_Sucetibilidade_RJ_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Contagem_Endereos_Sucetibilidade_RJ_1',
+            layerName: 'layer_Contagem_Endereos_Sucetibilidade_RJ_1',
+            pane: 'pane_Contagem_Endereos_Sucetibilidade_RJ_1',
+            onEachFeature: pop_Contagem_Endereos_Sucetibilidade_RJ_1,
+            style: style_Contagem_Endereos_Sucetibilidade_RJ_1_0,
+        });
+        bounds_group.addLayer(layer_Contagem_Endereos_Sucetibilidade_RJ_1);
+        map.addLayer(layer_Contagem_Endereos_Sucetibilidade_RJ_1);
+        function pop_SuscetibilidadeInundaoSerrana_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoSerrana_2_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoSerrana_2',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoSerrana_2',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoSerrana_2');
+        map.getPane('pane_SuscetibilidadeInundaoSerrana_2').style.zIndex = 402;
+        map.getPane('pane_SuscetibilidadeInundaoSerrana_2').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoSerrana_2 = new L.geoJson(json_SuscetibilidadeInundaoSerrana_2, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoSerrana_2',
+            layerName: 'layer_SuscetibilidadeInundaoSerrana_2',
+            pane: 'pane_SuscetibilidadeInundaoSerrana_2',
+            onEachFeature: pop_SuscetibilidadeInundaoSerrana_2,
+            style: style_SuscetibilidadeInundaoSerrana_2_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoSerrana_2);
+        function pop_SuscetibilidadeInundaoNorteFluminense_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoNorteFluminense_3_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoNorteFluminense_3',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoNorteFluminense_3',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoNorteFluminense_3');
+        map.getPane('pane_SuscetibilidadeInundaoNorteFluminense_3').style.zIndex = 403;
+        map.getPane('pane_SuscetibilidadeInundaoNorteFluminense_3').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoNorteFluminense_3 = new L.geoJson(json_SuscetibilidadeInundaoNorteFluminense_3, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoNorteFluminense_3',
+            layerName: 'layer_SuscetibilidadeInundaoNorteFluminense_3',
+            pane: 'pane_SuscetibilidadeInundaoNorteFluminense_3',
+            onEachFeature: pop_SuscetibilidadeInundaoNorteFluminense_3,
+            style: style_SuscetibilidadeInundaoNorteFluminense_3_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoNorteFluminense_3);
+        function pop_SuscetibilidadeInundaoNoroesteFluminense_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoNoroesteFluminense_4_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoNoroesteFluminense_4',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoNoroesteFluminense_4',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoNoroesteFluminense_4');
+        map.getPane('pane_SuscetibilidadeInundaoNoroesteFluminense_4').style.zIndex = 404;
+        map.getPane('pane_SuscetibilidadeInundaoNoroesteFluminense_4').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoNoroesteFluminense_4 = new L.geoJson(json_SuscetibilidadeInundaoNoroesteFluminense_4, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoNoroesteFluminense_4',
+            layerName: 'layer_SuscetibilidadeInundaoNoroesteFluminense_4',
+            pane: 'pane_SuscetibilidadeInundaoNoroesteFluminense_4',
+            onEachFeature: pop_SuscetibilidadeInundaoNoroesteFluminense_4,
+            style: style_SuscetibilidadeInundaoNoroesteFluminense_4_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoNoroesteFluminense_4);
+        function pop_SuscetibilidadeInundaoMetropolitana_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoMetropolitana_5_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoMetropolitana_5',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoMetropolitana_5',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoMetropolitana_5');
+        map.getPane('pane_SuscetibilidadeInundaoMetropolitana_5').style.zIndex = 405;
+        map.getPane('pane_SuscetibilidadeInundaoMetropolitana_5').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoMetropolitana_5 = new L.geoJson(json_SuscetibilidadeInundaoMetropolitana_5, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoMetropolitana_5',
+            layerName: 'layer_SuscetibilidadeInundaoMetropolitana_5',
+            pane: 'pane_SuscetibilidadeInundaoMetropolitana_5',
+            onEachFeature: pop_SuscetibilidadeInundaoMetropolitana_5,
+            style: style_SuscetibilidadeInundaoMetropolitana_5_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoMetropolitana_5);
+        function pop_SuscetibilidadeInundaoMdioParaba_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoMdioParaba_6_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoMdioParaba_6',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoMdioParaba_6',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoMdioParaba_6');
+        map.getPane('pane_SuscetibilidadeInundaoMdioParaba_6').style.zIndex = 406;
+        map.getPane('pane_SuscetibilidadeInundaoMdioParaba_6').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoMdioParaba_6 = new L.geoJson(json_SuscetibilidadeInundaoMdioParaba_6, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoMdioParaba_6',
+            layerName: 'layer_SuscetibilidadeInundaoMdioParaba_6',
+            pane: 'pane_SuscetibilidadeInundaoMdioParaba_6',
+            onEachFeature: pop_SuscetibilidadeInundaoMdioParaba_6,
+            style: style_SuscetibilidadeInundaoMdioParaba_6_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoMdioParaba_6);
+        function pop_SuscetibilidadeInundaoCostaVerde_7(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoCostaVerde_7_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoCostaVerde_7',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoCostaVerde_7',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoCostaVerde_7');
+        map.getPane('pane_SuscetibilidadeInundaoCostaVerde_7').style.zIndex = 407;
+        map.getPane('pane_SuscetibilidadeInundaoCostaVerde_7').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoCostaVerde_7 = new L.geoJson(json_SuscetibilidadeInundaoCostaVerde_7, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoCostaVerde_7',
+            layerName: 'layer_SuscetibilidadeInundaoCostaVerde_7',
+            pane: 'pane_SuscetibilidadeInundaoCostaVerde_7',
+            onEachFeature: pop_SuscetibilidadeInundaoCostaVerde_7,
+            style: style_SuscetibilidadeInundaoCostaVerde_7_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoCostaVerde_7);
+        function pop_SuscetibilidadeInundaoCentroSul_8(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoCentroSul_8_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoCentroSul_8',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoCentroSul_8',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoCentroSul_8');
+        map.getPane('pane_SuscetibilidadeInundaoCentroSul_8').style.zIndex = 408;
+        map.getPane('pane_SuscetibilidadeInundaoCentroSul_8').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoCentroSul_8 = new L.geoJson(json_SuscetibilidadeInundaoCentroSul_8, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoCentroSul_8',
+            layerName: 'layer_SuscetibilidadeInundaoCentroSul_8',
+            pane: 'pane_SuscetibilidadeInundaoCentroSul_8',
+            onEachFeature: pop_SuscetibilidadeInundaoCentroSul_8,
+            style: style_SuscetibilidadeInundaoCentroSul_8_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoCentroSul_8);
+        function pop_SuscetibilidadeInundaoBaixadasLitorneas_9(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeInundaoBaixadasLitorneas_9_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoBaixadasLitorneas_9',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(110,24,165,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeInundaoBaixadasLitorneas_9',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(201,140,255,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeInundaoBaixadasLitorneas_9');
+        map.getPane('pane_SuscetibilidadeInundaoBaixadasLitorneas_9').style.zIndex = 409;
+        map.getPane('pane_SuscetibilidadeInundaoBaixadasLitorneas_9').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeInundaoBaixadasLitorneas_9 = new L.geoJson(json_SuscetibilidadeInundaoBaixadasLitorneas_9, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeInundaoBaixadasLitorneas_9',
+            layerName: 'layer_SuscetibilidadeInundaoBaixadasLitorneas_9',
+            pane: 'pane_SuscetibilidadeInundaoBaixadasLitorneas_9',
+            onEachFeature: pop_SuscetibilidadeInundaoBaixadasLitorneas_9,
+            style: style_SuscetibilidadeInundaoBaixadasLitorneas_9_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeInundaoBaixadasLitorneas_9);
+        function pop_SuscetibilidadeaMovimentodeMassaSerrana_10(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaSerrana_10_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaSerrana_10',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaSerrana_10',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaSerrana_10');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaSerrana_10').style.zIndex = 410;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaSerrana_10').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaSerrana_10 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaSerrana_10, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaSerrana_10',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaSerrana_10',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaSerrana_10',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaSerrana_10,
+            style: style_SuscetibilidadeaMovimentodeMassaSerrana_10_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaSerrana_10);
+        function pop_SuscetibilidadeaMovimentodeMassaNorteFluminense_11(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaNorteFluminense_11_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaNorteFluminense_11',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaNorteFluminense_11',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaNorteFluminense_11');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaNorteFluminense_11').style.zIndex = 411;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaNorteFluminense_11').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaNorteFluminense_11 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaNorteFluminense_11, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaNorteFluminense_11',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaNorteFluminense_11',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaNorteFluminense_11',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaNorteFluminense_11,
+            style: style_SuscetibilidadeaMovimentodeMassaNorteFluminense_11_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaNorteFluminense_11);
+        function pop_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12').style.zIndex = 412;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12,
+            style: style_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12);
+        function pop_SuscetibilidadeaMovimentodeMassaMetropolitana_13(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaMetropolitana_13_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaMetropolitana_13',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaMetropolitana_13',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaMetropolitana_13');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaMetropolitana_13').style.zIndex = 413;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaMetropolitana_13').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaMetropolitana_13 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaMetropolitana_13, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaMetropolitana_13',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaMetropolitana_13',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaMetropolitana_13',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaMetropolitana_13,
+            style: style_SuscetibilidadeaMovimentodeMassaMetropolitana_13_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaMetropolitana_13);
+        function pop_SuscetibilidadeaMovimentodeMassaMdioParaba_14(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaMdioParaba_14_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaMdioParaba_14',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaMdioParaba_14',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaMdioParaba_14');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaMdioParaba_14').style.zIndex = 414;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaMdioParaba_14').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaMdioParaba_14 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaMdioParaba_14, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaMdioParaba_14',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaMdioParaba_14',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaMdioParaba_14',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaMdioParaba_14,
+            style: style_SuscetibilidadeaMovimentodeMassaMdioParaba_14_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaMdioParaba_14);
+        function pop_SuscetibilidadeaMovimentodeMassaCostaVerde_15(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaCostaVerde_15_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaCostaVerde_15',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaCostaVerde_15',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaCostaVerde_15');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaCostaVerde_15').style.zIndex = 415;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaCostaVerde_15').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaCostaVerde_15 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaCostaVerde_15, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaCostaVerde_15',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaCostaVerde_15',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaCostaVerde_15',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaCostaVerde_15,
+            style: style_SuscetibilidadeaMovimentodeMassaCostaVerde_15_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaCostaVerde_15);
+        function pop_SuscetibilidadeaMovimentodeMassaCentroSul_16(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaCentroSul_16_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaCentroSul_16',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaCentroSul_16',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaCentroSul_16');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaCentroSul_16').style.zIndex = 416;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaCentroSul_16').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaCentroSul_16 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaCentroSul_16, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaCentroSul_16',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaCentroSul_16',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaCentroSul_16',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaCentroSul_16,
+            style: style_SuscetibilidadeaMovimentodeMassaCentroSul_16_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaCentroSul_16);
+        function pop_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CLASSE'] !== null ? autolinker.link(String(feature.properties['CLASSE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17_0(feature) {
+            switch(String(feature.properties['CLASSE'])) {
+                case 'Alta':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,0,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+                case 'Média':
+                    return {
+                pane: 'pane_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17',
+                stroke: false, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,211,0,0.5019607843137255)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17');
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17').style.zIndex = 417;
+        map.getPane('pane_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17').style['mix-blend-mode'] = 'normal';
+        var layer_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17 = new L.geoJson(json_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17',
+            layerName: 'layer_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17',
+            pane: 'pane_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17',
+            onEachFeature: pop_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17,
+            style: style_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17_0,
+        });
+        bounds_group.addLayer(layer_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17);
+        var overlaysTree = [
+        {label: '<b>Suscetibilidade a movimentos gravitacionais de massa</b>', collapsed: true, selectAllCheckbox: true, children: [
+            {label: 'Região das Baixadas Litorâneas<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaBaixadasLitorneas_17},
+            {label: 'Região Centro-Sul Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCentroSul_16_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCentroSul_16_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaCentroSul_16},
+            {label: 'Região da Costa Verde<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCostaVerde_15_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaCostaVerde_15_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaCostaVerde_15},
+            {label: 'Região do Médio Paraíba<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaMdioParaba_14_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaMdioParaba_14_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaMdioParaba_14},
+            {label: 'Região Metropolitana<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaMetropolitana_13_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaMetropolitana_13_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaMetropolitana_13},
+            {label: 'Região Noroeste Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaNoroesteFluminense_12},
+            {label: 'Região Norte Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNorteFluminense_11_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaNorteFluminense_11_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaNorteFluminense_11},
+            {label: 'Região Serrana<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaSerrana_10_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeaMovimentodeMassaSerrana_10_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeaMovimentodeMassaSerrana_10},]},
+        {label: '<b>Suscetibilidade a inundações</b>', collapsed: true, selectAllCheckbox: true, children: [
+            {label: 'Região das Baixadas Litorâneas<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoBaixadasLitorneas_9_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoBaixadasLitorneas_9_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoBaixadasLitorneas_9},
+            {label: 'Região Centro-Sul Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoCentroSul_8_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoCentroSul_8_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoCentroSul_8},
+            {label: 'Região da Costa Verde<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoCostaVerde_7_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoCostaVerde_7_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoCostaVerde_7},
+            {label: 'Região do Médio Paraíba<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoMdioParaba_6_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoMdioParaba_6_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoMdioParaba_6},
+            {label: 'Região Metropolitana<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoMetropolitana_5_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoMetropolitana_5_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoMetropolitana_5},
+            {label: 'Região Noroeste Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoNoroesteFluminense_4_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoNoroesteFluminense_4_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoNoroesteFluminense_4},
+            {label: 'Região Norte Fluminense<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoNorteFluminense_3_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoNorteFluminense_3_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoNorteFluminense_3},
+            {label: 'Região Serrana<br /><table><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoSerrana_2_Alta0.png" /></td><td>Alta</td></tr><tr><td style="text-align: center;"><img src="legend/SuscetibilidadeInundaoSerrana_2_Média1.png" /></td><td>Média</td></tr></table>', layer: layer_SuscetibilidadeInundaoSerrana_2},]},
+            {label: '<img src="legend/Contagem_Endereos_Sucetibilidade_RJ_1.png" /> Contagem de endereços em áreas suscetíveis', layer: layer_Contagem_Endereos_Sucetibilidade_RJ_1},
+            {label: "Google Road", layer: layer_GoogleRoad_0, radioGroup: 'bm' },]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_Contagem_Endereos_Sucetibilidade_RJ_1,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'NM_MUN'}));
+        if (typeof url === 'undefined') {
+            document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
+        } else {
+            document.getElementsByClassName('search-button')[1].className += ' fa fa-binoculars';
+        }
+        resetLabels([layer_Contagem_Endereos_Sucetibilidade_RJ_1]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Contagem_Endereos_Sucetibilidade_RJ_1]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Contagem_Endereos_Sucetibilidade_RJ_1]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Contagem_Endereos_Sucetibilidade_RJ_1]);
+        });
+        </script>        
+    </body>
+</html>
